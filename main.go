@@ -187,8 +187,16 @@ func configure() {
 	staticPath = filepath.Join(exePath, "static")
 	logFile = filepath.Join(logPath, "theary.log")
 
-	os.MkdirAll(dataPath, 0666)
-	os.MkdirAll(logPath, 0666)	
+	if _, err := os.Stat(dataPath); err != nil {
+		if os.IsNotExist(err) {
+			os.MkdirAll(dataPath, 0666)
+		}
+	}
+	if _, err := os.Stat(logPath); err != nil {
+		if os.IsNotExist(err) {
+			os.MkdirAll(logPath, 0666)
+		}
+	}
 	
 	f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
