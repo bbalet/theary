@@ -2,7 +2,9 @@
 
 Theary is a fake SMTP server that temporarily stores received e-mails. It offers a minimalist webmail to display received e-mails. Theary was designed to offer a volatile SMTP server for demo or load test purposes. It was inspired by smtp4dev, but with web and volume in mind.
 
-Received e-mails are deleted on a reguler basis (depending on ```RECIPIENTS_LIFETIME``` value).
+Received e-mails are deleted on a regular basis (depending on ```RECIPIENTS_LIFETIME``` value).
+
+![Minimalist webmail client](/docs/home_screenshoot.png "Minimalist webmail client")
 
 # Features not covered
 
