@@ -90,7 +90,7 @@ var SaveMailChan chan *Client // workers for saving mail
 
 // defaults. Overwrite any of these in the configure() function which loads them from a json file
 var gConfig = make(map[string]string)
-var exePath, logFile, configFile, dataPath, tmplPath, staticPath string
+var exePath, logFile, configFile, logPath, dataPath, tmplPath, staticPath string
 var dbEmails *db.DB
 
 var logSrv service.Logger
@@ -181,11 +181,15 @@ func configure() {
 
 	exePath, _ = osext.ExecutableFolder()
 	configFile = filepath.Join(exePath, "conf", "conf.json")
-	logFile = filepath.Join(exePath, "logs", "theary.log")
+	logPath = filepath.Join(exePath, "logs")
 	dataPath = filepath.Join(exePath, "data")
 	tmplPath = filepath.Join(exePath, "tmpl")
 	staticPath = filepath.Join(exePath, "static")
+	logFile = filepath.Join(logPath, "theary.log")
 
+	os.MkdirAll(dataPath, 0666)
+	os.MkdirAll(logPath, 0666)	
+	
 	f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
