@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+	<title>{{ .Title }}</title>
+	<link type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.2/css/bootstrap.min.css" rel="stylesheet"/>
+	<link type="text/css" href="http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.2/css/bootstrap-responsive.min.css" rel="stylesheet"/>
+	<link href="http://cdnjs.cloudflare.com/ajax/libs/datatables/1.9.4/css/jquery.dataTables.min.css" rel="stylesheet">
+	<link href='http://fonts.googleapis.com/css?family=Chewy' rel='stylesheet' type='text/css'>
+	
+
+	<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+	<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/2.3.2/js/bootstrap.min.js"></script>
+	<script type="text/javascript" src="http://cdn.jsdelivr.net/bootstrap/2.3.2/js/bootstrap-typeahead.js"></script>
+	<script type="text/javascript" src="http://cdnjs.cloudflare.com/ajax/libs/datatables/1.9.4/jquery.dataTables.min.js"></script>
+	
+	<link rel="apple-touch-icon" sizes="57x57" href="/apple-touch-icon-57x57.png">
+	<link rel="apple-touch-icon" sizes="114x114" href="/apple-touch-icon-114x114.png">
+	<link rel="apple-touch-icon" sizes="72x72" href="/apple-touch-icon-72x72.png">
+	<link rel="apple-touch-icon" sizes="60x60" href="/apple-touch-icon-60x60.png">
+	<link rel="apple-touch-icon" sizes="120x120" href="/apple-touch-icon-120x120.png">
+	<link rel="apple-touch-icon" sizes="76x76" href="/apple-touch-icon-76x76.png">
+	<link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+	<link rel="icon" type="image/png" href="/favicon-16x16.png" sizes="16x16">
+	<link rel="icon" type="image/png" href="/favicon-32x32.png" sizes="32x32">
+	<meta name="msapplication-TileColor" content="#da532c">
+  </head>
+  <body>
+
+  <div class="container-fluid">
+ 	<div class="row-fluid">
+		<div class="span12">&nbsp;</div>
+	</div>
+	
+	<div class="row-fluid">
+		<div class="span12">
+			<img src="/logo.png" /> &nbsp; <span style="font-family: 'Chewy', 'cursive'; font-size: 48px;">Theary, a fake SMTP server</span>
+		</div>
+	</div>
+
+  <hr style="margin: 20px 0;">
+  
+    <div class="row-fluid">
+      <div class="span12">
+
+        <label for="txtWord">Recipient :</label>
+        <input id="txtWord" name="txtWord" type="text" class="typeahead" autocomplete="off" placeholder="enter the recipient" />
+		<button id="cmdCheck" class="btn btn-primary">Check</button>
+      
+	  
+		<table cellpadding="0" cellspacing="0" border="0" class="display" id="mails" width="100%">
+			<thead>
+				<tr>
+					<th>ID</th>
+					<th>Timestamp</th>
+					<th>From</th>
+					<th>Subject</th>
+					<th>Address</th>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>  
+		</table>
+	  
+	  
+	  
+		<div id="frmEmailDetails" class="modal hide fade">
+			<div class="modal-header">
+				<a href="#" class="close">&times;</a>
+				 <h3>Email details</h3>
+			</div>
+			<div class="modal-body" id="emailContent">
+			</div>
+			<div class="modal-footer">
+				<a href="javascript:$('#frmEmailDetails').modal('hide')" class="btn secondary">Close</a>
+			</div>
+		</div>
+		
+		<div id="frmUnknownRecipient" class="modal hide fade">
+			<div class="modal-header">
+				<a href="#" class="close">&times;</a>
+				 <h3>Unknown recipient</h3>
+			</div>
+			<div class="modal-body">
+			This recipient is not known by Theary server.
+			</div>
+			<div class="modal-footer">
+				<a href="javascript:$('#frmUnknownRecipient').modal('hide')" class="btn secondary">Close</a>
+			</div>
+		</div>
+		
+		<div id="frmEmptyField" class="modal hide fade">
+			<div class="modal-header">
+				<a href="#" class="close">&times;</a>
+				 <h3>Empty field</h3>
+			</div>
+			<div class="modal-body">
+			The field is empty.
+			</div>
+			<div class="modal-footer">
+				<a href="javascript:$('#frmEmptyField').modal('hide')" class="btn secondary">Close</a>
+			</div>
+		</div>
+	  
+        <script type="text/javascript">
+		var oTable;
+			
+          $(document).ready(function() {
+		  
+			//Build the datable. On click a row => open the modal pop-up showing the e-mail details
+			oTable = $('#mails').dataTable({
+				fnRowCallback: function( nRow, aData, iDisplayIndex, iDisplayIndexFull ) {
+					$('td', nRow).on('click', function() {
+						$.ajax({
+						url: '/mails/' + $("#txtWord").val() + '/' + aData[0],
+						type: 'get',
+						dataType: 'json',
+						success: function (result) {
+							result = result.replace(/\n/g, '<br />');
+							$('#emailContent').html(result);
+							$('#frmEmailDetails').modal('show');
+						}
+					  });
+					  
+					});
+					}
+				  });
+		  
+            // Field autocompletion
+			$('#txtWord').typeahead({
+              source: function (query, process) {
+                if ($("#txtWord").val().length >= 4) {
+                  return $.ajax({
+                    url: '/cleo/' + query,
+                    type: 'get',
+                    dataType: 'json',
+                    success: function (result) {
+                      var index;
+                      var resultList = [];
+                      for (index = 0; index < result.length; index++) {
+                        resultList.push(result[index].Word);
+                      }
+                      return process(resultList);
+                    }
+                  });
+                }
+              }  
+            });
+			
+			// Check if recipient exists in DB
+			$('#cmdCheck').click(function() {
+                if ($("#txtWord").val().length > 0) {
+                  return $.ajax({
+                    url: '/recipient/' + $("#txtWord").val(),
+                    type: 'get',
+                    dataType: 'json',
+                    success: function (result) {
+					  if (result) {
+						oTable.fnReloadAjax("/mails/" + $("#txtWord").val());
+					  } else {
+						$('#frmUnknownRecipient').modal('show');
+					  }
+                    }
+                  });
+                } else {
+					$('#frmEmptyField').modal('show');
+				}
+            });
+			
+			// Clean content of e-mail details pop-up
+			$('#frmEmailDetails').on('hidden', function() {
+				$(this).removeData('modal');
+			});
+			
+          });
+
+		  
+		  $.fn.dataTableExt.oApi.fnReloadAjax = function ( oSettings, sNewSource, fnCallback, bStandingRedraw )
+			{
+				// DataTables 1.10 compatibility - if 1.10 then versionCheck exists.
+				// 1.10s API has ajax reloading built in, so we use those abilities
+				// directly.
+				if ( $.fn.dataTable.versionCheck ) {
+					var api = new $.fn.dataTable.Api( oSettings );
+			 
+					if ( sNewSource ) {
+						api.ajax.url( sNewSource ).load( fnCallback, !bStandingRedraw );
+					}
+					else {
+						api.ajax.reload( fnCallback, !bStandingRedraw );
+					}
+					return;
+				}
+			 
+				if ( sNewSource !== undefined && sNewSource !== null ) {
+					oSettings.sAjaxSource = sNewSource;
+				}
+			 
+				// Server-side processing should just call fnDraw
+				if ( oSettings.oFeatures.bServerSide ) {
+					this.fnDraw();
+					return;
+				}
+			 
+				this.oApi._fnProcessingDisplay( oSettings, true );
+				var that = this;
+				var iStart = oSettings._iDisplayStart;
+				var aData = [];
+			 
+				this.oApi._fnServerParams( oSettings, aData );
+			 
+				oSettings.fnServerData.call( oSettings.oInstance, oSettings.sAjaxSource, aData, function(json) {
+					/* Clear the old information from the table */
+					that.oApi._fnClearTable( oSettings );
+			 
+					/* Got the data - add it to the table */
+					var aData =  (oSettings.sAjaxDataProp !== "") ?
+						that.oApi._fnGetObjectDataFn( oSettings.sAjaxDataProp )( json ) : json;
+			 
+					for ( var i=0 ; i<aData.length ; i++ )
+					{
+						that.oApi._fnAddData( oSettings, aData[i] );
+					}
+					 
+					oSettings.aiDisplay = oSettings.aiDisplayMaster.slice();
+			 
+					that.fnDraw();
+			 
+					if ( bStandingRedraw === true )
+					{
+						oSettings._iDisplayStart = iStart;
+						that.oApi._fnCalculateEnd( oSettings );
+						that.fnDraw( false );
+					}
+			 
+					that.oApi._fnProcessingDisplay( oSettings, false );
+			 
+					/* Callback user function - for event handlers etc */
+					if ( typeof fnCallback == 'function' && fnCallback !== null )
+					{
+						fnCallback( oSettings );
+					}
+				}, oSettings );
+			};
+        </script>
+  
+      </div>
+    </div>
+
+	<!-- FOOTER -->
+      <footer>		
+        <hr style="margin: 20px 0;">
+        <p>&copy; 2014 Benjamin BALET &middot; Theary is a fake SMTP server with a minimalist webmail client</p>
+      </footer>
+
+	</div><!-- /.container -->
+    
+  </body>
+</html>
