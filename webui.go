@@ -84,8 +84,10 @@ func setup_webui() {
 	var err error
 	switch strings.ToUpper(gConfig["WEBUI_MODE"]) {
 		case "LOCAL":	// Run as a local web server
+			log.Println("Run as a local web server")
 			err = http.ListenAndServe(gConfig["WEBUI_SERVE"], r)
 		case "TCP":		// Serve as FCGI via TCP
+			log.Println("FCGI via TCP.")
 			listener, err := net.Listen("tcp", gConfig["WEBUI_SERVE"])
 			if err != nil {
 				log.Fatal(err)
@@ -93,6 +95,7 @@ func setup_webui() {
 			defer listener.Close()
 		    err = fcgi.Serve(listener, r)
 		case "UNIX":		// Run as FCGI via UNIX socket
+			log.Println("FCGI via UNIX socket")
 			listener, err := net.Listen("unix", gConfig["WEBUI_SERVE"])
 			if err != nil {
 				log.Fatal(err)

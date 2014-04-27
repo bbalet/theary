@@ -106,9 +106,6 @@ func logln(level int, s string) {
 	if level == 2 {
 		log.Fatalf(s)
 	}
-	if len(gConfig["GSMTP_LOG_FILE"]) > 0 {
-		log.Println(s)
-	}
 }
 
 // main runs the program as a service or as a command line tool.
@@ -178,7 +175,7 @@ func main() {
 
 // configure sets up theary by reading the configuration file
 func configure() {
-
+	//Set the paths of the various folder and create the non existing ones
 	exePath, _ = osext.ExecutableFolder()
 	configFile = filepath.Join(exePath, "conf", "conf.json")
 	logPath = filepath.Join(exePath, "logs")
@@ -198,6 +195,7 @@ func configure() {
 		}
 	}
 	
+	//Set log to logs/theary.log
 	f, err := os.OpenFile(logFile, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("error opening file: %v", err)
@@ -246,7 +244,7 @@ func configure() {
 		max_size = 131072
 	}
 
-	log.Println("configured")
+	log.Println("Theary is now configured")
 }
 
 // doWork is the actual main entry function of the application
@@ -256,7 +254,6 @@ func doWork() {
 	//Open database
 	dbEmails, _ = db.OpenDB(dataPath)
 	randomize.Seed(time.Now().UTC().UnixNano())
-	createIfNotIndB("recipients")
 	
 	//Launch cleaner
 	duration, err := strconv.ParseInt(gConfig["CLEANER_INTERVAL"], 10, 64)
@@ -347,6 +344,7 @@ func checkError(err error) {
 	}
 }
 
+// handleClient is a go routine that manages a SMTP client
 func handleClient(client *Client) {
 	defer closeClient(client)
 	//	defer closeClient(client)
@@ -477,20 +475,25 @@ func handleClient(client *Client) {
 			return
 		}
 	}
-
 }
 
+// ResponseAdd adds a line to the response sent to the SMTP client
 func ResponseAdd(client *Client, line string) {
 	client.Response = line + "\r\n"
 }
+
+// closeClient closes the connection of the SMTP client
 func closeClient(client *Client) {
 	client.conn.Close()
 	<-sem // Done; enable next client to run.
 }
+
+// killClient kills the connection of the SMTP client
 func killClient(client *Client) {
 	client.kill_time = time.Now().Unix()
 }
 
+// readSmtp reads the SMTP message sent by client
 func readSmtp(client *Client) (input string, err error) {
 	var reply string
 	// Command state terminator by default
@@ -523,7 +526,7 @@ func readSmtp(client *Client) (input string, err error) {
 	return input, err
 }
 
-// Scan the Data part for a Subject line. Can be a multi-line
+// scanSubject scans the Data part for a Subject line. Can be a multi-line
 func scanSubject(client *Client, reply string) {
 	if client.Subject == "" && (len(reply) > 8) {
 		test := strings.ToUpper(reply[0:9])
@@ -541,6 +544,7 @@ func scanSubject(client *Client, reply string) {
 	}
 }
 
+// ResponseWrite write a response to the STMP client
 func ResponseWrite(client *Client) (err error) {
 	var size int
 	client.conn.SetDeadline(time.Now().Add(timeout * time.Second))
@@ -552,7 +556,6 @@ func ResponseWrite(client *Client) (err error) {
 
 // saveMail receives values from the channel repeatedly until it is closed.
 func saveMail() {
-
 	for {
 		client := <-SaveMailChan
 		client.Subject = mimeHeaderDecode(client.Subject)
@@ -637,6 +640,7 @@ func mailTransportDecode(str string, encoding_type string, charset string) strin
 	return str
 }
 
+// fromBase64 decodes a base64 encoded string
 func fromBase64(Data string) string {
 	buf := bytes.NewBufferString(Data)
 	decoder := base64.NewDecoder(base64.StdEncoding, buf)
@@ -644,6 +648,7 @@ func fromBase64(Data string) string {
 	return string(res)
 }
 
+// fromQuotedP decodes a quoted string
 func fromQuotedP(Data string) string {
 	buf := bytes.NewBufferString(Data)
 	decoder := qprintable.NewDecoder(qprintable.BinaryEncoding, buf)
@@ -651,6 +656,7 @@ func fromQuotedP(Data string) string {
 	return string(res)
 }
 
+// fixCharset fixes charset
 func fixCharset(charset string) string {
 	reg, _ := regexp.Compile(`[_:.\/\\]`)
 	fixed_charset := reg.ReplaceAllString(charset, "-")
@@ -674,6 +680,7 @@ func fixCharset(charset string) string {
 	return charset
 }
 
+// md5hex returns a string containing the MD5 hash of the content passed as a parameter
 func md5hex(str string) string {
 	h := md5.New()
 	h.Write([]byte(str))
